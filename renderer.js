@@ -97,6 +97,10 @@ function initAdvancedShaders()
 
     shaderProgram_Floor.pMatrixUniform = gl.getUniformLocation(shaderProgram_Floor, "uPMatrix");
     shaderProgram_Floor.mvMatrixUniform = gl.getUniformLocation(shaderProgram_Floor, "uMVMatrix");
+    shaderProgram_Floor.shadowMatrixUniform = gl.getUniformLocation(shaderProgram_Floor, "shadow_matrix");
+    shaderProgram_Floor.grbgUniform = gl.getUniformLocation(shaderProgram_Floor, "grbg");
+    
+    console.log("grbg uniform: " + shaderProgram_Floor.grbgUniform);
 }
 
 var shaderProgram;
@@ -129,8 +133,9 @@ function initShaders()
     }
     gl.useProgram(shaderProgram);
     
-    gl.enableVertexAttribArray(0);
-
+    
+    shaderProgram.vertexPositionAttribute = 0;
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
     shaderProgram.vpMatrixUniform = gl.getUniformLocation(shaderProgram, "vp_matrix");
     shaderProgram.mMatrixUniform  = gl.getUniformLocation(shaderProgram, "model");
     
@@ -158,18 +163,18 @@ let mm   = new MD.Models(gl);
 function _drawPyramid() {
     
     gl.bindBuffer(gl.ARRAY_BUFFER, mm.pyramidVertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, mm.pyramidVertexPositionBuffer.itemSize,gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, mm.pyramidVertexColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, mm.pyramidVertexColorBuffer.itemSize,gl.FLOAT, false, 0, 0);    
+    gl.vertexAttribPointer(0, mm.pyramidVertexPositionBuffer.itemSize,gl.FLOAT, false, 0, 0);
+    //gl.bindBuffer(gl.ARRAY_BUFFER, mm.pyramidVertexColorBuffer);
+    //gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, mm.pyramidVertexColorBuffer.itemSize,gl.FLOAT, false, 0, 0);    
     gl.drawArrays(gl.TRIANGLES, 0, mm.pyramidVertexPositionBuffer.numItems);
 }
 
 
 function _drawCube() {
     gl.bindBuffer(gl.ARRAY_BUFFER, mm.cubeVertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, mm.cubeVertexPositionBuffer.itemSize,gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, mm.cubeVertexColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, mm.cubeVertexColorBuffer.itemSize,gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(0, mm.cubeVertexPositionBuffer.itemSize,gl.FLOAT, false, 0, 0);
+    //gl.bindBuffer(gl.ARRAY_BUFFER, mm.cubeVertexColorBuffer);
+    //gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, mm.cubeVertexColorBuffer.itemSize,gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mm.cubeVertexIndexBuffer);
     gl.drawElements(gl.TRIANGLES, mm.cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);    
 }
@@ -177,9 +182,9 @@ function _drawCube() {
 function _drawFloor() {
         
     gl.bindBuffer(gl.ARRAY_BUFFER, mm.floorVertexPositionBuffer);
-    gl.vertexAttribPointer(shaderProgram_Floor.vertexPositionAttribute, mm.floorVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(0, mm.floorVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
     //gl.bindBuffer(gl.ARRAY_BUFFER, mm.floorVertexPositionBuffer);
-    gl.vertexAttribPointer(1, mm.floorVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);    
+    //gl.vertexAttribPointer(1, mm.floorVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);    
     gl.drawArrays(gl.TRIANGLES, 0, mm.floorVertexPositionBuffer.numItems);
 
 }
@@ -197,23 +202,29 @@ function drawScene()
 
     {
 //        gl.bindFramebuffer(gl.FRAMEBUFFER, LightInfo.viewFramebuffer);
+        //gl.disable(gl.DEPTH_TEST);
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
         mat4.identity(mvMatrix);
-        mat4.translate([0.0,0.0, 30.0], mvMatrix );
+        mat4.translate([-0.5,-0.5, -8.0], mvMatrix );
         gl.useProgram(shaderProgram_Floor);
+
 
         gl.uniformMatrix4fv(shaderProgram_Floor.pMatrixUniform, false, pMatrix);
         gl.uniformMatrix4fv(shaderProgram_Floor.mvMatrixUniform, false, mvMatrix);
-
+        gl.uniform1fv(shaderProgram_Floor.grbgUniform, [2.0]);
+        
         _drawFloor(); 
 
-        //gl.useProgram(shaderProgram);
+        gl.uniform1fv(shaderProgram_Floor.grbgUniform, [0.0]);        
         _drawPyramid();
-
+        
+        
+        gl.uniform1fv(shaderProgram_Floor.grbgUniform, [0.5]);        
         _drawCube();
+        
     }
 }
 
@@ -243,8 +254,8 @@ function tick() {
 
     //gl.clearBufferfv(gl.COLOR, 0, [0.0, 0.3, 0.0, 1.0]);
 
-    gl.enable(gl.SAMPLE_COVERAGE);
-    gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    //gl.enable(gl.SAMPLE_COVERAGE);
+    //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
     //gl.sampleCoverage(1.0, false);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

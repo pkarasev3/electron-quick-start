@@ -143,15 +143,21 @@ module.exports.floorShaders = function() {
         uniform mat4 uPMatrix;
         uniform mat4 shadow_matrix;
 
+        uniform float grbg;
+
         out vec2 UV;
         out vec4 shadow_coord; 
 
         void main() 
         {
-        vec4 posfull = vec4(position, 1.0);
-        gl_Position  = uPMatrix * uMVMatrix * posfull;
-        UV           = (position.xy*0.5) + vec2(0.5);
-        shadow_coord = shadow_matrix * posfull;
+            vec4 posfull = vec4(position, 1.0);
+            gl_Position  = uPMatrix * uMVMatrix * posfull;
+            
+            UV = vec2(grbg);
+            //if(grbg > 1.0)
+                UV = (position.xy*0.5) + vec2(0.5);
+            
+            shadow_coord = shadow_matrix * posfull;
         }`,
         fs :
         `#version 300 es
