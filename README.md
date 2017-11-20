@@ -1,3 +1,7 @@
+# webgl2 demo/test of shadowmap
+
+![shadowmap](https://github.com/pkarasev3/electron-quick-start/blob/master/shadowmap_screenshot.png "shadowmap screenshot of webgl2 canvas in electron")
+
 # electron-quick-start
 
 **Clone and run for a quick way to see Electron in action.**
