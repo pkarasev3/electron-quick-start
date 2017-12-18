@@ -18,19 +18,18 @@
 <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
-<script id="shader-fs" type="x-shader/x-fragment">#version 300 es    
+<script id="shader-fs" type="x-shader/x-fragment">#version 300 es
     precision mediump float;
 
     in vec4 vColor;
     in vec4 shadow_coord;
 
     uniform mediump sampler2DShadow shadow_tex;
-    //uniform mediump sampler2D shadow_tex;
-    
+
     out vec4 fragColor;
 
     void main() {
-        
+
         float stepx     = 0.01;
         float stepy     = 0.01;
         float window_sz = 5.0;
@@ -44,52 +43,42 @@
             shz_max = max(shz_max, shz_sub);
             shz_avg += shz_sub;
         } }
-        float shz = shz_max * 0.00001 + shz_avg / count; 
-        
-    //                                     * vec4(1.0,1.0,1.0,1.0);     
-    
-        //float shz    = texture(shadow_tex, shadow_coord);
+        float shz = shz_max * 0.00001 + shz_avg / count;
 
-        //vec4 shadow_color   = texture(shadow_tex, shadow_coord.xy);
-        //float shz           = shadow_color.z;
-                
         if(shz < 0.005)
             shz = 0.0;
         if(shz > 0.1)
             shz = 1.0;
-        
-        //    else
-          //  shz = 100.0*shz;
-        
+
         fragColor = vec4( shz*vColor.xyz, 1.0);
 
-        float debug = 0.0;        
+        float debug = 0.0;
         if(debug > 0.0)
             fragColor = vec4( shadow_coord.z*0.1, shz, 0.001*vColor.x, 1.0); //vColor + 0.0001*shadow_color;
     }
 </script>
 
-<script id="shader-vs" type="x-shader/x-vertex">#version 300 es    
+<script id="shader-vs" type="x-shader/x-vertex">#version 300 es
     precision mediump float;
 
     layout(location = 0) in vec3 aVertexPosition;
     layout(location = 1) in vec4 aVertexColor;
-    
+
     uniform mat4 uMMatrix;
     uniform mat4 uVMatrix;
     uniform mat4 uPMatrix;
     uniform mat4 shadow_matrix;
 
-    out vec4 shadow_coord; 
+    out vec4 shadow_coord;
     out vec4 vColor;
 
-    void main() 
+    void main()
     {
         vec4 posfull = vec4(aVertexPosition, 1.0);
         gl_Position  = uPMatrix * uVMatrix * uMMatrix * posfull;
-        
+
         vColor = aVertexColor;
-        
+
         shadow_coord = shadow_matrix * uMMatrix *posfull;
     }
 </script>

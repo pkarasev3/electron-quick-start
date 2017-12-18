@@ -1,15 +1,15 @@
-let checkStatus = function() 
+let checkStatus = function()
 {
     let status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     console.log('fb complete = ' + gl.FRAMEBUFFER_COMPLETE);
     console.log('fb incomplete attachment = ' + gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
-    console.log(status);     
+    console.log(status);
     if( status !== gl.FRAMEBUFFER_COMPLETE) {
         alert('framebuffer attachment status is myrus\'d up! '); }
 }
-    
+
 module.exports.lightInfo = function() {
-    
+
     this.lightPosition = [1.2/1,1.0/2,3.5];
     this.depth_tex = {};
     this.depth_tex_debug = {};
@@ -20,14 +20,14 @@ module.exports.lightInfo = function() {
     this.texSize = 2048;
     this.biasMatrix        = mat4.create();
 
-    this.initFramebuffer = function(gl) 
-    {        
+    this.initFramebuffer = function(gl)
+    {
         const targetTextureWidth  = this.texSize;
         const targetTextureHeight = this.texSize;
         const targetTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, targetTexture);
         this.depth_tex = targetTexture;
-        
+
         {
             const level = 0;
             const internalFormat = gl.DEPTH_COMPONENT32F;
@@ -41,36 +41,29 @@ module.exports.lightInfo = function() {
                         format, type, data);
         }
 
-        // define size and format
-        //const level = 3;
-        //const internalFormat = gl.R32F;                                
-        //gl.texStorage2D(gl.TEXTURE_2D, level, internalFormat,
-        //                targetTextureWidth, targetTextureHeight);
-        //api ref: 
-        // void gl.texStorage2D(target, levels, internalformat, width, height);
-        
+
         // set the filtering so we don't need mips
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,   gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER,   gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, 
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE,
                          gl.COMPARE_REF_TO_TEXTURE);
-        gl.texParameteri(gl.TEXTURE_2D, 
+        gl.texParameteri(gl.TEXTURE_2D,
                          gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
 
         // create a framebuffer for light grbg.
         this.lightFramebuffer = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightFramebuffer);
-        
-        // attach the texture as the first color attachment        
+
+        // attach the texture as the first color attachment
         if(1)
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT,
                                 gl.TEXTURE_2D, this.depth_tex, 0);
-        
+
         {
             const debugTexture = gl.createTexture();
             gl.bindTexture(gl.TEXTURE_2D, debugTexture);
-            this.depth_debug_tex = debugTexture;            
-            {        
+            this.depth_debug_tex = debugTexture;
+            {
                 const level = 0;
                 const internalFormat = gl.RGBA8;//gl.RGBA32F;
                 const width  = targetTextureWidth;
@@ -82,40 +75,39 @@ module.exports.lightInfo = function() {
                 gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border,
                             format, type, data);
             }
-            /*gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R32F,
-                            targetTextureWidth, targetTextureHeight);             */
+
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,   gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER,   gl.LINEAR);            
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER,   gl.LINEAR);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
                                     gl.TEXTURE_2D, this.depth_debug_tex, 0);
             gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-            checkStatus();            
+            checkStatus();
         }
 
         {
             mat4.identity(this.biasMatrix);
             mat4.translate(this.biasMatrix, [0.5,0.5,0.5]);
-            mat4.scale(this.biasMatrix, [0.5,0.5,0.5]);            
+            mat4.scale(this.biasMatrix, [0.5,0.5,0.5]);
             console.log(this.biasMatrix);
             console.log( mat4.multiplyVec4(this.biasMatrix, [-1.0,-1.0,1.0,1.0]));
             this.light_proj_matrix = mat4.frustum(-1.0,1.0,-1.0,1.0,1.0,200.0);
             this.light_view_matrix = mat4.lookAt(this.lightPosition,
-                                                 [0.0,0.0,0.0], [0.0,1.0,0.0]);         
+                                                 [0.0,0.0,0.0], [0.0,1.0,0.0]);
             this.light_vp_matrix   = mat4.multiply(this.light_proj_matrix,this.light_view_matrix);
             this.shadow_vp_matrix  = mat4.multiply(this.light_proj_matrix,this.light_view_matrix);
             this.shadow_vp_matrix  = mat4.multiply(this.biasMatrix,this.shadow_vp_matrix);
             console.log(this.light_vp_matrix);
             console.log(this.shadow_vp_matrix);
         }
-        
+
     }
 
 
-    
+
 }
 
 module.exports.screenQuadShaders = function() {
-    return { 
+    return {
         vs : `#version 300 es
 
         layout(location = 0) in vec4 position;
@@ -146,15 +138,15 @@ module.exports.screenQuadShaders = function() {
 
 module.exports.lightShaders = function() {
     return {
-        vs: 
+        vs:
         `#version 300 es
         precision mediump float;
         uniform mat4 vp_matrix;
         uniform mat4 model;
-        
+
         layout (location = 0) in vec3 position;
         layout (location = 1) in vec4 color;
-        
+
         void main(void)
         {
             gl_Position = vp_matrix * model * vec4(position,1.0);
@@ -164,18 +156,13 @@ module.exports.lightShaders = function() {
         `#version 300 es
         precision mediump float;
         layout (location = 0) out vec4 color;
-        
+
         void main(void)
         {
-            // note: for debug purposes, we have also mapped 
+            // note: for debug purposes, we have also mapped
             // colorattachment0 to the framebuffer now assumed to be bound.
-            float zval = gl_FragCoord.z;
-            float xval = gl_FragCoord.x;
-            if(zval < 0.9)
-                xval = 0.0;
-            //color = vec4(zval, xval ,gl_FragCoord.y,1.0);
             color = vec4(gl_FragCoord.z);
-            
+
         }`
     };
 }
